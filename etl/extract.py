@@ -48,7 +48,6 @@ class SalesRecord(BaseModel):
     sales_region: str = Field(alias="Sales Region")
     sales_rep: str = Field(alias="Sales Representative")
     customer_rating: Optional[str] = Field(alias="Customer Rating")
-    customer_comments: Optional[str] = Field(alias="Customer Comments")
     shipping_cost: float = Field(alias="Shipping Cost", ge=0)
     delivery_status: str = Field(alias="Delivery Status")
     delivery_date: Optional[str] = Field(alias="Delivery Date")

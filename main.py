@@ -1,7 +1,8 @@
 import os
+from etl.extract import download_csv_files_from_s3
 from etl.transform import validate_and_clean_data
 from etl.load import load_data_to_postgres
-from etl.extract import download_csv_files_from_s3
+
 
 
 def run():

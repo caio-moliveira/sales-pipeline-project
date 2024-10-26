@@ -40,7 +40,6 @@ def generate_random_record():
     sales_region = random.choice(sales_regions)
     sales_rep = fake.name()
     customer_rating = random.choice(['1 star', '2 stars', '3 stars', '4 stars', '5 stars'])
-    customer_comments = fake.sentence() if random.random() > 0.7 else None
     shipping_cost = round(random.uniform(5, 50), 2)
     delivery_status = random.choice(delivery_statuses)
     delivery_date = sale_date + timedelta(days=random.randint(1, 10)) if delivery_status == 'Delivered' else None
@@ -67,7 +66,6 @@ def generate_random_record():
         "Sales Region": sales_region,
         "Sales Representative": sales_rep,
         "Customer Rating": customer_rating,
-        "Customer Comments": customer_comments,
         "Shipping Cost": shipping_cost,
         "Delivery Status": delivery_status,
         "Delivery Date": delivery_date
@@ -86,7 +84,7 @@ def create_sales_csv():
     csv_path = f"data/sales_data_{timestamp}.csv"
     
     # Save DataFrame to CSV
-    df_sales.to_csv(csv_path, index=False, encoding='ISO-8859-1')
+    df_sales.to_csv(csv_path, index=False, encoding='windows-1252')
     print(f"File '{csv_path}' created successfully with {num_rows} rows.")
     
     return csv_path

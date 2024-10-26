@@ -86,7 +86,7 @@ def create_sales_csv():
     csv_path = f"data/sales_data_{timestamp}.csv"
     
     # Save DataFrame to CSV
-    df_sales.to_csv(csv_path, index=False, encoding='utf-8', sep=',')
+    df_sales.to_csv(csv_path, index=False, encoding='ISO-8859-1')
     print(f"File '{csv_path}' created successfully with {num_rows} rows.")
     
     return csv_path

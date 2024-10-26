@@ -19,7 +19,7 @@ db_url = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POS
 # Initialize database engine
 engine = create_engine(db_url)
 
-def load_data_to_postgres(file_path, table_name='sales_data'):
+def load_data_to_postgres(file_path, table_name='sales_records'):
     """Load data from a CSV file to a PostgreSQL database table."""
     try:
         # Load CSV into a DataFrame

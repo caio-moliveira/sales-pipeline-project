@@ -1,13 +1,26 @@
-version:
 services:
+  # creates a postgres service
   postgres:
-    image: postgres 
+    image: postgres:latest
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     ports:
-      - "5432:5432"  # Expose port 5432 on the host
-  
+      - "5432:5432" 
+  # creates a frontend service using streamlit
+  frontend:
+    image: streamlit/streamlit:latest
+    ports:
+      - "80:80" 
+    volumes:
+      - ./streamlit:/app
+    command: streamlit run /app/app.py
+ 
+networks:
+  mynetwork:
+    driver: bridge  

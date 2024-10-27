@@ -26,7 +26,7 @@ def check_and_upload_csv_files():
     # Verify that the local data folder exists
     if not os.path.exists(local_data_folder):
         print(f"The folder '{local_data_folder}' does not exist.")
-        return
+        return []
 
     # Get all CSV files in the data folder
     csv_files = [f for f in os.listdir(local_data_folder) if f.endswith('.csv')]
@@ -34,7 +34,7 @@ def check_and_upload_csv_files():
     # Check if there are any CSV files to upload
     if not csv_files:
         print(f"No CSV files found in '{local_data_folder}' folder.")
-        return
+        return []
 
     # Configure the S3 client with credentials
     s3_client = boto3.client(
@@ -43,6 +43,9 @@ def check_and_upload_csv_files():
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         region_name=AWS_REGION
     )
+
+    # List to keep track of successfully uploaded file paths
+    uploaded_paths = []
     
     # Process each CSV file
     for csv_file in csv_files:
@@ -70,6 +73,9 @@ def check_and_upload_csv_files():
                 validated_data.object_name
             )
             print(f"File '{validated_data.file_path}' successfully uploaded to S3 bucket '{validated_data.bucket_name}' as '{validated_data.object_name}'.")
+            uploaded_paths.append(validated_data.object_name)  # Add to the list of uploaded paths
         except Exception as e:
             print(f"Error uploading file '{file_path}' to S3: {e}")
 
+    # Return the list of uploaded file paths
+    return uploaded_paths

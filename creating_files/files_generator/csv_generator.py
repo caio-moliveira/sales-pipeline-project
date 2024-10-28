@@ -3,10 +3,11 @@ import random
 from faker import Faker
 from datetime import timedelta, datetime
 import os
+import numpy as np
 
 # Initialize Faker and set the number of rows
 fake = Faker()
-num_rows = (random.randint(50, 100))
+num_rows = np.random.randint(50, 100)
 
 # Lists of random values for specific columns
 product_categories = ['Appliances', 'Furniture', 'Technology', 'Clothing', 'Accessories']

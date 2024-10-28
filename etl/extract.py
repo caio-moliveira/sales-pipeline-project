@@ -1,12 +1,11 @@
 import os
 import pandas as pd
 import boto3
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from typing import List, Optional
-from io import StringIO, BytesIO
+from io import BytesIO
 import chardet
-
 
 # Load environment variables for AWS credentials
 load_dotenv()
@@ -24,6 +23,9 @@ s3_client = boto3.client(
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     region_name=AWS_REGION
 )
+
+# Track files that have already been downloaded
+downloaded_files = set()
 
 # Define Pydantic model for row validation
 class SalesRecord(BaseModel):
@@ -52,18 +54,15 @@ class SalesRecord(BaseModel):
     delivery_status: str = Field(alias="Delivery Status")
     delivery_date: Optional[str] = Field(alias="Delivery Date")
 
-
-
-
 def download_csv_files_from_s3(prefix='CSV/'):
-    """Download all CSV files from the S3 'CSV/' folder and load them into a list of DataFrames."""
+    """Download new CSV files from the S3 'CSV/' folder."""
     response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
     csv_files = []
 
     for item in response.get('Contents', []):
         file_key = item['Key']
-        if file_key.endswith('.csv'):
-            print(f"Downloading {file_key} from S3 bucket.")
+        if file_key.endswith('.csv') and file_key not in downloaded_files:
+            print(f"Downloading new file {file_key} from S3 bucket.")
             csv_obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=file_key)
 
             # Detect encoding using chardet
@@ -74,4 +73,8 @@ def download_csv_files_from_s3(prefix='CSV/'):
             csv_df = pd.read_csv(BytesIO(raw_content), encoding=encoding)
             csv_files.append(csv_df)
 
+            # Mark the file as downloaded
+            downloaded_files.add(file_key)
+
     return csv_files
+

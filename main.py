@@ -1,4 +1,6 @@
 import os
+import glob
+import pandas as pd
 from etl.extract import download_csv_files_from_s3
 from etl.transform import validate_and_clean_data
 from etl.load import load_data_to_postgres
@@ -8,7 +10,7 @@ import json
 # Kafka consumer configuration
 consumer_conf = {
     'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'group.id': 'streamlit-app',
+    'group.id': 'etl-group',
     'auto.offset.reset': 'earliest',
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
@@ -18,43 +20,48 @@ consumer_conf = {
 consumer = Consumer(consumer_conf)
 consumer.subscribe(['sales'])
 
-def run_etl(file_name):
-    # Step 1: Download CSV files from S3
-    csv_files = download_csv_files_from_s3(file_name)
+def get_latest_file(directory, extension='csv'):
+    """Get the latest file in the specified directory with the specified extension."""
+    directory = os.path.abspath(directory)
+    print(f"Checking directory: {directory}")
+    
+    list_of_files = glob.glob(f"{directory}/*.{extension}")
+    if not list_of_files:
+        print("No files found.")
+        return None
+    latest_file = max(list_of_files, key=os.path.getmtime)
+    print(f"Latest file found: {latest_file}")
+    return latest_file
 
-    if not csv_files:
-        print("No CSV files found in the S3 bucket under the 'CSV/' prefix.")
+def run():
+    # Step 1: Check for the latest file in the 'data' folder
+    latest_file = get_latest_file('data')
+    if not latest_file:
+        print("No CSV files found in the 'data' folder.")
         return
 
-    # Step 2: Validate and clean the DataFrames
-    cleaned_data = validate_and_clean_data(csv_files)
+    print(f"Processing latest file: {latest_file}")
 
-    # Step 3: Save the combined DataFrame as a new CSV file
-    output_path = 'data/combined_cleaned_data.csv'
-    os.makedirs('data', exist_ok=True)
+    # Step 2: Load the CSV into a DataFrame
+    try:
+        df = pd.read_csv(latest_file)
+    except Exception as e:
+        print(f"Failed to load {latest_file} into DataFrame: {e}")
+        return
+
+    # Step 3: Validate and clean the DataFrame
+    cleaned_data = validate_and_clean_data([df])
+
+    # Optional: Save the cleaned data (if needed for backup or other purposes)
+    output_path = 'data_consolidated/combined_cleaned_data.csv'
+    os.makedirs('data_consolidated', exist_ok=True)
     cleaned_data.to_csv(output_path, index=False)
-    print(f"Combined and cleaned data saved to {output_path}")
-
-    file_path = 'data/combined_cleaned_data.csv'
+    print(f"Cleaned data saved to {output_path}")
 
     # Step 4: Load data into PostgreSQL
-    load_data_to_postgres(file_path)
+    load_data_to_postgres(output_path)
+
 
 # Run the Kafka consumer loop
 if __name__ == "__main__":
-    print("Starting ETL Kafka consumer...")
-    while True:
-        msg = consumer.poll(1.0)
-        if msg is None:
-            continue
-        if msg.error():
-            print(f"Consumer error: {msg.error()}")
-            continue
-
-        # Parse the Kafka message and start the ETL process
-        data = json.loads(msg.value().decode('utf-8'))
-        file_name = data['file_name']
-        print(f"Received notification for new file: {file_name}")
-        run_etl(file_name)
-
-    consumer.close()
+    run()

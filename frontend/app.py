@@ -7,16 +7,12 @@ import streamlit as st
 from ydata_profiling import ProfileReport
 from streamlit_pandas_profiling import st_profile_report
 import matplotlib.pyplot as plt
-from kafka_etl.kafka_producer import KafkaProducer
 
 st.set_page_config(layout="wide")
 st.title("Real-Time Data Visualization")
 
 if st.button('Rerun'):
     st.rerun()
-
-# Initialize Kafka producer
-producer = KafkaProducer()
 
 # Load environment variables
 load_dotenv()
@@ -37,7 +33,6 @@ def load_data() -> pd.DataFrame:
     engine = create_engine(db_url)
     with engine.connect() as connection:
         df = pd.read_sql("SELECT * FROM sales_data", connection)
-        producer.send_message("application", {"status": "Data successfully pulled from Postgres"})
     return df
 
 # KPI Calculation Functions
@@ -126,10 +121,6 @@ def main():
     else:
         st.warning("No data available to display.")
 
-
-
-    # Trigger app rerun every 60 seconds
-    time.sleep(60)
 
 if __name__ == "__main__":
     main()

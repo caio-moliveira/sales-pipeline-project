@@ -25,18 +25,20 @@ class KafkaProducer:
         # Configure the producer with SASL_SSL for Confluent Cloud
         self.producer = ConfluentProducer(conf)
 
-    def send_message(self, topic: str, message: dict):
+    def send_message(self, topic: str, message: dict, key: str = None):
         """Send message to 'S3-bucket' topic when a CSV file reaches the S3 bucket."""
         try:
-            self.producer.produce(topic, json.dumps(message).encode("utf-8"))
-            logger.info("Message sent to %s: %s", topic, message)
+            serialized_message = json.dumps(message).encode("utf-8")
+            serialized_key = key.encode("utf-8") if key else None
 
+            self.producer.produce(topic, serialized_message, key=serialized_key)
             self.producer.poll(0)
+            logger.info("Message sent to %s: %s with key: %s", topic, message, key)
         except Exception as e:
             logger.error("Failed to send message to %s: %s", topic,e)
 
     def close(self):
         self.producer.flush()
-        self.producer.close()
+
 
 

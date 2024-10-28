@@ -1,67 +1,58 @@
-import os
-import glob
-import pandas as pd
+import time
+from creating_files.files_generator.csv_generator import create_sales_csv
+from creating_files.loader_S3.loader import check_and_upload_csv_files
 from etl.extract import download_csv_files_from_s3
 from etl.transform import validate_and_clean_data
 from etl.load import load_data_to_postgres
-from confluent_kafka import Consumer
-import json
+import os
+import pandas as pd
 
-# Kafka consumer configuration
-consumer_conf = {
-    'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'group.id': 'etl-group',
-    'auto.offset.reset': 'earliest',
-    'security.protocol': 'SASL_SSL',
-    'sasl.mechanisms': 'PLAIN',
-    'sasl.username': os.getenv('SASL_USERNAME'),
-    'sasl.password': os.getenv('SASL_PASSWORD')
-}
-consumer = Consumer(consumer_conf)
-consumer.subscribe(['sales'])
+# Define paths and folders
+data_folder = "data_consolidated"
+os.makedirs(data_folder, exist_ok=True)
 
-def get_latest_file(directory, extension='csv'):
-    """Get the latest file in the specified directory with the specified extension."""
-    directory = os.path.abspath(directory)
-    print(f"Checking directory: {directory}")
-    
-    list_of_files = glob.glob(f"{directory}/*.{extension}")
-    if not list_of_files:
-        print("No files found.")
-        return None
-    latest_file = max(list_of_files, key=os.path.getmtime)
-    print(f"Latest file found: {latest_file}")
-    return latest_file
-
-def run():
-    # Step 1: Check for the latest file in the 'data' folder
-    latest_file = get_latest_file('data')
-    if not latest_file:
-        print("No CSV files found in the 'data' folder.")
+def run_etl_process():
+    """Check for new CSV files in S3, run the ETL pipeline, and load cleaned data into PostgreSQL."""
+    # Step 1: Download new CSV files from S3
+    new_dataframes = download_csv_files_from_s3()
+    if not new_dataframes:
+        print("No new files to process.")
         return
 
-    print(f"Processing latest file: {latest_file}")
+    # Step 2: Validate and clean data
+    cleaned_data = validate_and_clean_data(new_dataframes)
 
-    # Step 2: Load the CSV into a DataFrame
-    try:
-        df = pd.read_csv(latest_file)
-    except Exception as e:
-        print(f"Failed to load {latest_file} into DataFrame: {e}")
-        return
-
-    # Step 3: Validate and clean the DataFrame
-    cleaned_data = validate_and_clean_data([df])
-
-    # Optional: Save the cleaned data (if needed for backup or other purposes)
-    output_path = 'data_consolidated/combined_cleaned_data.csv'
-    os.makedirs('data_consolidated', exist_ok=True)
+    # Optional: Save cleaned data locally as a backup
+    output_path = os.path.join(data_folder, "combined_cleaned_data.csv")
     cleaned_data.to_csv(output_path, index=False)
     print(f"Cleaned data saved to {output_path}")
 
-    # Step 4: Load data into PostgreSQL
+    # Step 3: Load cleaned data into PostgreSQL
     load_data_to_postgres(output_path)
 
-
-# Run the Kafka consumer loop
+# Scheduled task runner
 if __name__ == "__main__":
-    run()
+    last_csv_generation = time.time()
+    last_s3_check = time.time()
+
+    while True:
+        current_time = time.time()
+
+        # Generate a new CSV every 30 seconds
+        if current_time - last_csv_generation >= 30:
+            print("Generating new CSV file...")
+            create_sales_csv()
+            last_csv_generation = current_time
+
+        # Check and upload CSV files to S3 every 15 seconds
+        if current_time - last_s3_check >= 15:
+            print("Checking for new files to upload to S3...")
+            check_and_upload_csv_files()
+            last_s3_check = current_time
+
+        # Run ETL process
+        print("Running ETL process to check for new data in S3...")
+        run_etl_process()
+
+        # Wait before the next iteration
+        time.sleep(5)

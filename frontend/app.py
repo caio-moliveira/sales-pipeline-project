@@ -1,5 +1,5 @@
 import os
-import json
+import time
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
@@ -7,10 +7,13 @@ import streamlit as st
 from ydata_profiling import ProfileReport
 from streamlit_pandas_profiling import st_profile_report
 import matplotlib.pyplot as plt
-from confluent_kafka import Producer
 
 st.set_page_config(layout="wide")
 st.title("Real-Time Data Visualization")
+
+if st.button('Rerun'):
+    st.rerun()
+
 
 # Load environment variables
 load_dotenv()
@@ -25,23 +28,15 @@ POSTGRES_DB = os.getenv('POSTGRES_DB')
 # Create a PostgreSQL connection string
 db_url = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
-# Kafka Producer Configuration
-producer_conf = {
-    'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'security.protocol': 'SASL_SSL',
-    'sasl.mechanisms': 'PLAIN',
-    'sasl.username': os.getenv('SASL_USERNAME'),
-    'sasl.password': os.getenv('SASL_PASSWORD')
-}
-producer = Producer(producer_conf)
-
 # Load data from PostgreSQL "sales_data" table
-@st.cache_data
+@st.cache_data(ttl=60)  # Refresh cache every 60 seconds
 def load_data() -> pd.DataFrame:
     engine = create_engine(db_url)
     with engine.connect() as connection:
         df = pd.read_sql("SELECT * FROM sales_data", connection)
     return df
+
+
 
 # KPI Calculation Functions
 def calculate_kpis(df: pd.DataFrame):
@@ -80,21 +75,15 @@ def plot_customer_rating_distribution(df: pd.DataFrame):
     rating_counts.plot(kind='pie', autopct='%1.1f%%', title='Customer Rating Distribution')
     st.pyplot(plt)
 
-# Kafka message producer function
-def send_data_to_kafka(df: pd.DataFrame):
-    for _, row in df.iterrows():
-        message = row.to_json().encode('utf-8')
-        producer.produce(topic='sales', value=message)
-    producer.flush()
-    st.success("Data sent to Kafka successfully.")
-
 # Main Streamlit app function
 def main():
     st.title("Interactive KPI Dashboard")
     st.write("This dashboard loads data from the 'sales_data' table in PostgreSQL and performs KPI analysis.")
-    
+
     # Load data and display KPIs
     df = load_data()
+        
+    # Calculate and display KPIs if data exists
     if not df.empty:
         # Calculate KPIs
         total_sales, avg_discount, avg_shipping_cost, gross_profit_margin, top_products = calculate_kpis(df)
@@ -127,16 +116,18 @@ def main():
         plot_customer_rating_distribution(df)
         
         # Button to generate ProfileReport
-        if st.button("Generate Detailed Profile Report"):
+        if st.button("Generate Detailed Profile Report", key="profile_report_button"):
             st.write("## Data Profiling Report")
             profile = ProfileReport(df, title="Data Profiling Report", explorative=True)
             st_profile_report(profile)
-        
-        # Button to send data to Kafka
-        if st.button("Send Data to Kafka"):
-            send_data_to_kafka(df)
+            
     else:
         st.warning("No data available to display.")
+
+
+
+    # Trigger app rerun every 60 seconds
+    time.sleep(60)
 
 if __name__ == "__main__":
     main()

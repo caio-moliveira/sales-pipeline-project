@@ -7,7 +7,7 @@ import numpy as np
 
 # Initialize Faker and set the number of rows
 fake = Faker()
-num_rows = np.random.randint(50, 100)
+
 
 # Lists of random values for specific columns
 product_categories = ['Appliances', 'Furniture', 'Technology', 'Clothing', 'Accessories']
@@ -73,6 +73,8 @@ def generate_random_record():
     }
 
 def create_sales_csv():
+
+    num_rows = np.random.randint(50, 100)
     # Create 'data' directory if it doesn't exist
     os.makedirs('data', exist_ok=True)
     

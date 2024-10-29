@@ -48,12 +48,14 @@ services:
   postgres:
     image: bitnami/postgresql:latest
     container_name: postgres_db
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=docker
-      - POSTGRES_DB=sales_pipeline
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5431:5432"
     volumes:
       - postgres_data:/bitnami/postgresql
     networks:
@@ -62,8 +64,8 @@ services:
 
   backend:
     build:
-      context: ./src/backend
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: backend/Dockerfile
     container_name: etl_service
     env_file:
       - .env

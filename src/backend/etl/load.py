@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
+
 # Load environment variables for PostgreSQL credentials
 load_dotenv()
 

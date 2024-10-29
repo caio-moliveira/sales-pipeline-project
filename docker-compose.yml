@@ -46,20 +46,23 @@ services:
       - kafka
 
   postgres:
-    image: postgres:latest
+    image: bitnami/postgresql:latest
     container_name: postgres_db
-    env_file:
-      - .env
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=sales_pipeline
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/bitnami/postgresql
     networks:
       - kafka
 
+
   backend:
     build:
-      context: .
+      context: ./src/backend
       dockerfile: Dockerfile
     container_name: etl_service
     env_file:
@@ -67,13 +70,14 @@ services:
     depends_on:
       - postgres
       - sales
+    entrypoint: ["sh", "-c", "sleep 10 && python main.py"]
     networks:
       - kafka
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./src/frontend
+      dockerfile: Dockerfile
     container_name: streamlit_app
     env_file:
       - .env
@@ -81,7 +85,8 @@ services:
       - "8501:8501"
     depends_on:
       - postgres
-      - sales
+      - backend
+    entrypoint: ["sh", "-c", "sleep 10 && streamlit run app.py --server.port=8501 --server.address=0.0.0.0"]
     networks:
       - kafka
 

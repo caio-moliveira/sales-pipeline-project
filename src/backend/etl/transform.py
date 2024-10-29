@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from pydantic import ValidationError
 from typing import List
-from etl.extract import SalesRecord
+from backend.etl.extract import SalesRecord
 
 def validate_and_clean_data(dataframes: List[pd.DataFrame]) -> pd.DataFrame:
     """Validate and clean data by removing invalid rows and enforcing unique 'sale_id'."""

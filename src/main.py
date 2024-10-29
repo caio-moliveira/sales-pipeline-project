@@ -1,11 +1,11 @@
 import time
 import os
 import pandas as pd
-from creating_files.files_generator.csv_generator import create_sales_csv
-from creating_files.loader_S3.loader import check_and_upload_csv_files
-from etl.extract import download_csv_files_from_s3
-from etl.transform import validate_and_clean_data
-from etl.load import load_data_to_postgres
+from backend.creating_files.files_generator.csv_generator import create_sales_csv
+from backend.creating_files.loader_S3.loader import check_and_upload_csv_files
+from backend.etl.extract import download_csv_files_from_s3
+from backend.etl.transform import validate_and_clean_data
+from backend.etl.load import load_data_to_postgres
 from kafka_etl.kafka_producer import KafkaProducer
 
 

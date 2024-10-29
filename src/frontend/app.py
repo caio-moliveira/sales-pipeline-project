@@ -2,10 +2,9 @@ import os
 import time
 import pandas as pd
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
 import streamlit as st
-from ydata_profiling import ProfileReport
-from streamlit_pandas_profiling import st_profile_report
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
@@ -29,11 +28,19 @@ db_url = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_H
 
 # Load data from PostgreSQL "sales_data" table
 @st.cache_data(ttl=60)  # Refresh cache every 60 seconds
-def load_data() -> pd.DataFrame:
+def load_data(retries=5, delay=10):
     engine = create_engine(db_url)
-    with engine.connect() as connection:
-        df = pd.read_sql("SELECT * FROM sales_data", connection)
-    return df
+    for attempt in range(retries):
+        try:
+            with engine.connect() as connection:
+                df = pd.read_sql("SELECT * FROM sales_data", connection)
+                return df
+        except OperationalError:
+            if attempt < retries - 1:
+                time.sleep(delay)  # Wait before retrying
+            else:
+                st.warning("Unable to connect to the database after multiple attempts.")
+                return pd.DataFrame()
 
 # KPI Calculation Functions
 def calculate_kpis(df: pd.DataFrame):
@@ -111,13 +118,7 @@ def main():
 
         st.write("### Customer Rating Distribution")
         plot_customer_rating_distribution(df)
-        
-        # Button to generate ProfileReport
-        if st.button("Generate Detailed Profile Report", key="profile_report_button"):
-            st.write("## Data Profiling Report")
-            profile = ProfileReport(df, title="Data Profiling Report", explorative=True)
-            st_profile_report(profile)
-            
+                    
     else:
         st.warning("No data available to display.")
 

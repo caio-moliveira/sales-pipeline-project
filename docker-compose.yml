@@ -1,26 +1,93 @@
 services:
-  # creates a postgres service
+  zookeeper:
+    platform: linux/amd64
+    image: confluentinc/cp-zookeeper:${CONFLUENT_PLATFORM_VERSION:-7.4.0}
+    container_name: zookeeper
+    restart: unless-stopped
+    ports:
+      - "32181:32181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 32181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka
+
+  sales:  # Kafka broker
+    platform: linux/amd64
+    image: confluentinc/cp-kafka:${CONFLUENT_PLATFORM_VERSION:-7.4.0}
+    container_name: sales
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://sales:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - kafka
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8087:8080"
+    depends_on:
+      - sales
+    environment:
+      KAFKA_CLUSTERS_0_NAME: sales
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: sales:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    networks:
+      - kafka
+
   postgres:
     image: postgres:latest
+    container_name: postgres_db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-    ports:
-      - "5432:5432" 
-  # creates a frontend service using streamlit
+    networks:
+      - kafka
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: etl_service
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - sales
+    networks:
+      - kafka
+
   frontend:
-    image: streamlit/streamlit:latest
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: streamlit_app
+    env_file:
+      - .env
     ports:
-      - "80:80" 
-    volumes:
-      - ./streamlit:/app
-    command: streamlit run /app/app.py
- 
+      - "8501:8501"
+    depends_on:
+      - postgres
+      - sales
+    networks:
+      - kafka
+
+volumes:
+  postgres_data:
+
 networks:
-  mynetwork:
-    driver: bridge  
+  kafka:
+    name: kafka

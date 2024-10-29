@@ -1,23 +1,17 @@
-# Use an official Python image as the base
+# Use a lightweight Python image
 FROM python:3.12-slim
 
-# Set environment variables to prevent bytecode generation and enable buffer output
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the Poetry files and install dependencies
-COPY pyproject.toml poetry.lock ./
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+# Copy the main ETL script and the Kafka files
+COPY main.py .
+COPY kafka_etl/kafka_consumer.py .
+COPY kafka_etl/kafka_producer.py .
 
-# Copy the entire application code
-COPY . .
-
-# Define the default command to run main.py (ETL process)
-CMD ["poetry", "run", "python", "main.py"]
+# Run the ETL script
+CMD ["python", "main.py"]

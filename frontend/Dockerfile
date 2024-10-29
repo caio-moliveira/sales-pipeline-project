@@ -1,17 +1,19 @@
-# Dockerfile-frontend
+# Use a lightweight Python image
+FROM python:3.12-slim
 
-# Imagem base
-FROM python:3.12
-
-# Definir o diretório de trabalho no container
+# Set working directory
 WORKDIR /app
 
-# Copiar os arquivos de dependências e instalar
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar o restante dos arquivos do projeto
-COPY . /app
+# Copy only frontend code (assuming 'frontend/' contains app.py and related files)
+COPY frontend/ ./frontend
 
-# Comando para executar a aplicação
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Expose Streamlit's default port
+EXPOSE 8501
+
+
+# Default command (can be overridden in docker-compose)
+CMD ["streamlit", "run", "frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

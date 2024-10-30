@@ -1,11 +1,14 @@
 import os
+import re
 import time
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
 import streamlit as st
-import matplotlib.pyplot as plt
+import altair as alt
+
+
 
 st.set_page_config(layout="wide")
 st.title("Real-Time Data Visualization")
@@ -41,86 +44,96 @@ def load_data(retries=5, delay=10):
                 st.warning("Unable to connect to the database after multiple attempts.")
                 return pd.DataFrame()
 
+
 # KPI Calculation Functions
-def calculate_kpis(df: pd.DataFrame):
-    total_sales = df['total_value'].sum()
-    avg_discount = df['discount'].mean()
-    avg_shipping_cost = df['shipping_cost'].mean()
+def calculate_kpis(df):
+    total_revenue = df['total_value'].sum()
+    avg_order_value = df['total_value'].mean()
+    total_quantity_sold = df['quantity_sold'].sum()
+    avg_quantity_sold = df['quantity_sold'].mean()
     gross_profit_margin = (df['gross_profit'].sum() / df['total_value'].sum()) * 100
-    top_products = df.groupby('product_name')['total_value'].sum().nlargest(5)
-    return total_sales, avg_discount, avg_shipping_cost, gross_profit_margin, top_products
-
-# Visualization Functions
-def plot_sales_by_category(df: pd.DataFrame):
-    sales_by_category = df.groupby('product_category')['total_value'].sum()
-    sales_by_category.plot(kind='bar', title='Sales by Product Category')
-    plt.xlabel('Product Category')
-    plt.ylabel('Total Sales')
-    st.pyplot(plt)
-
-def plot_sales_by_region(df: pd.DataFrame):
-    sales_by_region = df.groupby('sales_region')['total_value'].sum()
-    sales_by_region.plot(kind='bar', title='Sales by Region')
-    plt.xlabel('Region')
-    plt.ylabel('Total Sales')
-    st.pyplot(plt)
-
-def plot_sales_trend(df: pd.DataFrame):
-    df['sale_date'] = pd.to_datetime(df['sale_date'])
-    sales_trend = df.groupby('sale_date')['total_value'].sum()
-    sales_trend.plot(kind='line', title='Sales Trend Over Time')
-    plt.xlabel('Date')
-    plt.ylabel('Total Sales')
-    st.pyplot(plt)
-
-def plot_customer_rating_distribution(df: pd.DataFrame):
-    rating_counts = df['customer_rating'].value_counts()
-    rating_counts.plot(kind='pie', autopct='%1.1f%%', title='Customer Rating Distribution')
-    st.pyplot(plt)
+    return total_revenue, avg_order_value, total_quantity_sold, avg_quantity_sold, gross_profit_margin
 
 # Main Streamlit app function
 def main():
-    st.title("Interactive KPI Dashboard")
-    st.write("This dashboard loads data from the 'sales_data' table in PostgreSQL and performs KPI analysis.")
+    st.title("Interactive Sales KPI Dashboard")
+    st.write("Explore sales performance, profitability, and more through varied visualizations.")
 
-    # Load data and display KPIs
+    # Load data
     df = load_data()
-        
-    # Calculate and display KPIs if data exists
-    if not df.empty:
-        # Calculate KPIs
-        total_sales, avg_discount, avg_shipping_cost, gross_profit_margin, top_products = calculate_kpis(df)
-        
-        # Display KPIs
-        st.write("## KPI Overview")
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Sales", f"${total_sales:,.2f}")
-        col2.metric("Average Discount", f"{avg_discount:.2f}%")
-        col3.metric("Avg. Shipping Cost", f"${avg_shipping_cost:.2f}")
-        col4.metric("Gross Profit Margin", f"{gross_profit_margin:.2f}%")
-        
-        # Display top products
-        st.write("### Top 5 Products by Sales")
-        st.table(top_products)
 
-        # Visualization section
-        st.write("## Visualizations")
+    # Calculate KPIs
+    total_revenue, avg_order_value, total_quantity_sold, avg_quantity_sold, gross_profit_margin = calculate_kpis(df)
 
-        st.write("### Sales by Product Category")
-        plot_sales_by_category(df)
+    # Display Top KPIs
+    st.write("## KPI Overview")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Revenue", f"${total_revenue:,.2f}")
+    col1.metric("Gross Profit Margin", f"{gross_profit_margin:.2f}%")
+    col2.metric("Total Quantity Sold", f"{total_quantity_sold:,.0f}")
+    col2.metric("Average Quantity Sold", f"{avg_quantity_sold:.2f}")
+    col3.metric("Average Order Value", f"${avg_order_value:,.2f}")
 
-        st.write("### Sales by Region")
-        plot_sales_by_region(df)
+        # Visualization Sections
+    st.write("## Revenue and Profitability Insights")
 
-        st.write("### Sales Trend Over Time")
-        plot_sales_trend(df)
+    # Revenue by Product Category using Altair for slimmer bars
+    st.write("### Revenue by Product Category")
+    revenue_by_category = df.groupby('product_category')['total_value'].sum().reset_index()
+    revenue_bar = alt.Chart(revenue_by_category).mark_bar(size=15).encode(
+        x=alt.X('total_value:Q', title='Total Revenue'),
+        y=alt.Y('product_category:N', sort='-x', title='Product Category')
+    ).properties(width=700, height=300)
+    st.altair_chart(revenue_bar)
 
-        st.write("### Customer Rating Distribution")
-        plot_customer_rating_distribution(df)
-                    
-    else:
-        st.warning("No data available to display.")
+    # Sales Trend Over Time
+    st.write("### Sales Trend Over Time")
+    df['sale_date'] = pd.to_datetime(df['sale_date'])
+    sales_trend = df.groupby('sale_date')['total_value'].sum().reset_index()
+    sales_trend_chart = alt.Chart(sales_trend).mark_line().encode(
+        x='sale_date:T',
+        y='total_value:Q'
+    ).properties(width=700, height=300)
+    st.altair_chart(sales_trend_chart)
 
+    # Total Value vs Gross Profit by Sales Channel
+    st.write("### Total Value vs Gross Profit by Sales Channel")
+    scatter_plot = alt.Chart(df).mark_circle(size=60).encode(
+        x='total_value',
+        y='gross_profit',
+        color='sales_channel',
+        tooltip=['sales_channel', 'total_value', 'gross_profit']
+    ).interactive().properties(width=700, height=400)
+    st.altair_chart(scatter_plot)
+
+    # Top 10 Quantity Sold by Sales Representative with slimmer bars
+    st.write("### Top 10 Quantity Sold by Sales Representative")
+    top_sales_rep = df.groupby('sales_rep')['quantity_sold'].sum().nlargest(10).reset_index()
+    sales_rep_bar = alt.Chart(top_sales_rep).mark_bar(size=15).encode(
+        x=alt.X('quantity_sold:Q', title='Quantity Sold'),
+        y=alt.Y('sales_rep:N', sort='-x', title='Sales Representative')
+    ).properties(width=700, height=300)
+    st.altair_chart(sales_rep_bar)
+
+    # Total Value by Sales Region with slimmer bars
+    st.write("### Total Value by Sales Region")
+    total_value_by_region = df.groupby('sales_region')['total_value'].sum().reset_index()
+    region_bar = alt.Chart(total_value_by_region).mark_bar(size=15).encode(
+        x=alt.X('total_value:Q', title='Total Value'),
+        y=alt.Y('sales_region:N', sort='-x', title='Sales Region')
+    ).properties(width=700, height=300)
+    st.altair_chart(region_bar)
+
+    # Interactive Sales Trend by Product Category
+    st.write("## Interactive Sales Trend by Product Category")
+    selected_category = st.selectbox("Select Product Category", options=df['product_category'].unique())
+    filtered_df = df[df['product_category'] == selected_category]
+    sales_trend_category = filtered_df.groupby('sale_date')['total_value'].sum().reset_index()
+    category_trend_chart = alt.Chart(sales_trend_category).mark_line().encode(
+        x='sale_date:T',
+        y='total_value:Q'
+    ).properties(width=700, height=300)
+    st.altair_chart(category_trend_chart)
 
 if __name__ == "__main__":
     main()

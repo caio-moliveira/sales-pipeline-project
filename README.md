@@ -22,6 +22,8 @@ The project simulates a daily sales sheet generation system where a CSV file is 
 
 The data is then visualized in a Streamlit-powered web application that accesses the PostgreSQL database and displays key sales KPIs in real time.
 
+![architecture](![image](![app](https://github.com/user-attachments/assets/066cd9d0-4056-4812-9109-7f7ad9c09028)
+
 ## Technologies and Libraries Used
 
 ### Infrastructure

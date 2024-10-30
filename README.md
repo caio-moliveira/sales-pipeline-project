@@ -69,3 +69,51 @@ This project follows a modular ETL pipeline and visualization architecture. Each
    ```bash
    git clone https://github.com/username/sales-etl-dashboard.git
    cd sales-etl-dashboard
+   ```
+
+   ## Environment Setup
+
+**Create and configure** `.env` **file** for PostgreSQL, AWS, and Kafka settings.
+**Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+  ```
+  ## Run Docker Services
+  
+  ```bash
+  docker-compose up
+  ```
+
+ ## Data Flow
+
+1. **Data Generation**: 
+   - Uses `Faker` to simulate realistic sales data, stored as a CSV in S3.
+2. **Extraction**:
+   - `boto3` fetches the latest sales CSV from S3.
+3. **Transformation**:
+   - `pandas` and `pydantic` perform basic data cleaning and validation.
+4. **Loading**:
+   - `sqlalchemy` ORM maps data to PostgreSQL.
+5. **Visualization**:
+   - Streamlit dashboard connects to PostgreSQL, presenting KPIs in real time.
+
+## Key Performance Indicators (KPIs)
+
+The dashboard displays the following KPIs:
+- **Total Sales**: Sum of daily sales.
+- **Average Transaction Value**: Average value of transactions.
+- **Top-selling Products**: Highest volume products for the day.
+- **Sales by Category**: Breakdown of sales by product category.
+- **Sales Trend**: A real-time chart tracking sales over time.
+
+## Future Improvements
+
+Potential improvements to the current project include:
+- **Automated Testing**: Integration of unit and integration tests.
+- **Enhanced Data Validation**: Additional checks in the ETL process.
+- **CI/CD**: Automated deployment pipeline using GitHub Actions.
+- **Improved Scalability**: Adding more robust error handling and retries.
+
+This project demonstrates an end-to-end data pipeline, integrating cloud storage, data processing, and real-time visualization. It serves as a practical foundation for similar data engineering and analytics workflows.
+
+

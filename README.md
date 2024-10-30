@@ -81,7 +81,7 @@ This project follows a modular ETL pipeline and visualization architecture. Each
 3. **Run Docker Services**
   
   ```bash
-  docker-compose up
+  docker-compose up --build
   ```
 
 

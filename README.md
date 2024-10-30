@@ -1,4 +1,4 @@
-![app](https://github.com/user-attachments/assets/1033adf7-d859-499e-a2b3-4881d9660ccd)# Sales ETL and Real-Time KPI Dashboard
+# Sales ETL and Real-Time KPI Dashboard
 
 This project demonstrates an end-to-end ETL pipeline, from data generation to a real-time KPI dashboard, showcasing data engineering and processing skills. The project leverages a combination of cloud storage, ETL practices, and real-time data visualization to simulate a sales pipeline. This README details the project’s architecture, main components, and instructions for running the project locally or in Docker containers.
 

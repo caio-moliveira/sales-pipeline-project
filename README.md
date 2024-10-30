@@ -10,7 +10,6 @@ This project demonstrates an end-to-end ETL pipeline, from data generation to a 
 - [Setup Instructions](#setup-instructions)
 - [Data Flow](#data-flow)
 - [Key Performance Indicators (KPIs)](#key-performance-indicators-kpis)
-- [Future Improvements](#future-improvements)
 
 ---
 
@@ -59,9 +58,10 @@ This project follows a modular ETL pipeline and visualization architecture. Each
 
 ### Prerequisites
 
-- Docker and Docker Compose
+- Docker
 - AWS CLI configured with S3 access
-- PostgreSQL and Kafka should be accessible (or run through Docker)
+- PostgreSQL
+- Kafka
   
 ### Running the Project
 
@@ -70,19 +70,15 @@ This project follows a modular ETL pipeline and visualization architecture. Each
    git clone https://github.com/username/sales-etl-dashboard.git
    cd sales-etl-dashboard
    ```
+2. **Create and configure** `.env` **file** for PostgreSQL, AWS, and Kafka settings.
 
-   ## Environment Setup
 
-**Create and configure** `.env` **file** for PostgreSQL, AWS, and Kafka settings.
-**Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-  ```
-  ## Run Docker Services
+3. **Run Docker Services**
   
   ```bash
   docker-compose up
   ```
+
 
  ## Data Flow
 
@@ -106,14 +102,6 @@ The dashboard displays the following KPIs:
 - **Sales by Category**: Breakdown of sales by product category.
 - **Sales Trend**: A real-time chart tracking sales over time.
 
-## Future Improvements
 
-Potential improvements to the current project include:
-- **Automated Testing**: Integration of unit and integration tests.
-- **Enhanced Data Validation**: Additional checks in the ETL process.
-- **CI/CD**: Automated deployment pipeline using GitHub Actions.
-- **Improved Scalability**: Adding more robust error handling and retries.
-
-This project demonstrates an end-to-end data pipeline, integrating cloud storage, data processing, and real-time visualization. It serves as a practical foundation for similar data engineering and analytics workflows.
 
 

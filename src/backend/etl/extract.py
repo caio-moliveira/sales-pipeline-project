@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import boto3
 from pydantic import BaseModel, Field
+from datetime import date
 from dotenv import load_dotenv
 from typing import List, Optional
 from io import BytesIO
@@ -29,21 +30,21 @@ downloaded_files = set()
 
 # Define Pydantic model for row validation
 class SalesRecord(BaseModel):
-    sale_date: str = Field(alias="Sale Date")
+    sale_date: date = Field(alias="Sale Date")
     sale_id: str = Field(alias="Sale ID")
     product_id: str = Field(alias="Product ID")
     product_name: str = Field(alias="Product Name")
     product_category: str = Field(alias="Product Category")
     quantity_sold: int = Field(alias="Quantity Sold", ge=1)
     unit_price: float = Field(alias="Unit Price", ge=0)
-    discount: Optional[float] = Field(alias="Discount (%)", ge=0, le=100)
+    discount: Optional[int] = Field(alias="Discount (%)", ge=0, le=100)  # Changed to int
     total_value: float = Field(alias="Total Value (with Discount)", ge=0)
     unit_cost: float = Field(alias="Unit Cost", ge=0)
     total_cost: float = Field(alias="Total Cost", ge=0)
     gross_profit: float = Field(alias="Gross Profit")
     payment_method: str = Field(alias="Payment Method")
     payment_status: str = Field(alias="Payment Status")
-    payment_date: Optional[str] = Field(alias="Payment Date")
+    payment_date: Optional[date] = Field(alias="Payment Date")  # Changed to date
     customer_id: str = Field(alias="Customer ID")
     customer_name: str = Field(alias="Customer Name")
     sales_channel: str = Field(alias="Sales Channel")
@@ -52,7 +53,7 @@ class SalesRecord(BaseModel):
     customer_rating: Optional[str] = Field(alias="Customer Rating")
     shipping_cost: float = Field(alias="Shipping Cost", ge=0)
     delivery_status: str = Field(alias="Delivery Status")
-    delivery_date: Optional[str] = Field(alias="Delivery Date")
+    delivery_date: Optional[date] = Field(alias="Delivery Date")
 
 def download_csv_files_from_s3(prefix='CSV/'):
     """Download new CSV files from the S3 'CSV/' folder."""

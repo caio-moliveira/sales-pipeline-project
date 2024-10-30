@@ -5,7 +5,7 @@ from backend.creating_files.files_generator.csv_generator import create_sales_cs
 from backend.creating_files.loader_S3.loader import check_and_upload_csv_files
 from backend.etl.extract import download_csv_files_from_s3
 from backend.etl.transform import validate_and_clean_data
-from backend.etl.load import load_data_to_postgres
+from backend.etl.load import load_data_to_postgres, create_sales_data_table
 from kafka_etl.kafka_producer import KafkaProducer
 
 
@@ -17,6 +17,9 @@ os.makedirs(data_folder, exist_ok=True)
 producer = KafkaProducer()
 
 def run_etl_process():
+
+    # Step 0: Create the sales_data table if it doesn't already exist
+    create_sales_data_table()
     """Check for new CSV files in S3, run the ETL pipeline, and load cleaned data into PostgreSQL."""
     # Step 1: Download new CSV files from S3
     new_dataframes = download_csv_files_from_s3()

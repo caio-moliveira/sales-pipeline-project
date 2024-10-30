@@ -19,12 +19,11 @@ load_dotenv()
 # PostgreSQL configuration
 POSTGRES_USER = os.getenv('POSTGRES_USER')
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-POSTGRES_HOST = os.getenv('POSTGRES_HOST')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT')
+#POSTGRES_HOST = os.getenv('POSTGRES_HOST')
 POSTGRES_DB = os.getenv('POSTGRES_DB')
 
 # Create a PostgreSQL connection string
-db_url = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+db_url = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@postgres_db/{POSTGRES_DB}"
 
 # Load data from PostgreSQL "sales_data" table
 @st.cache_data(ttl=60)  # Refresh cache every 60 seconds

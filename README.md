@@ -72,8 +72,8 @@ This project follows a modular ETL pipeline and visualization architecture. Each
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/username/sales-etl-dashboard.git
-   cd sales-etl-dashboard
+   git clone git@github.com/caio-moliveira/sales-pipeline-project.git
+   cd sales-pipeline-project
    ```
 2. **Create and configure** `.env` **file** for PostgreSQL, AWS, and Kafka settings.
 

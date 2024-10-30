@@ -51,7 +51,7 @@ def calculate_kpis(df):
     avg_order_value = df['total_value'].mean()
     total_quantity_sold = df['quantity_sold'].sum()
     avg_quantity_sold = df['quantity_sold'].mean()
-    gross_profit_margin = (df['gross_profit'].sum() / df['total_value'].sum()) * 100
+    gross_profit_margin = (df['gross_profit'].sum() / total_revenue * 100) if total_revenue != 0 else 0
     return total_revenue, avg_order_value, total_quantity_sold, avg_quantity_sold, gross_profit_margin
 
 # Main Streamlit app function
@@ -91,10 +91,10 @@ def main():
     df['sale_date'] = pd.to_datetime(df['sale_date'])
     sales_trend = df.groupby('sale_date')['total_value'].sum().reset_index()
     sales_trend_chart = alt.Chart(sales_trend).mark_line().encode(
-        x='sale_date:T',
-        y='total_value:Q'
+        x=alt.X('sale_date:T', sort='x', title='Sale Date'),
+        y=alt.Y('total_value:Q', title='Total Value')
     ).properties(width=700, height=300)
-    st.altair_chart(sales_trend_chart)
+    st.altair_chart(sales_trend_chart)  
 
     # Total Value vs Gross Profit by Sales Channel
     st.write("### Total Value vs Gross Profit by Sales Channel")
@@ -108,7 +108,7 @@ def main():
 
     # Top 10 Quantity Sold by Sales Representative with slimmer bars
     st.write("### Top 10 Quantity Sold by Sales Representative")
-    top_sales_rep = df.groupby('sales_rep')['quantity_sold'].sum().nlargest(10).reset_index()
+    top_sales_rep = df.groupby('sales_rep')['quantity_sold'].sum().reset_index()
     sales_rep_bar = alt.Chart(top_sales_rep).mark_bar(size=15).encode(
         x=alt.X('quantity_sold:Q', title='Quantity Sold'),
         y=alt.Y('sales_rep:N', sort='-x', title='Sales Representative')
@@ -130,8 +130,8 @@ def main():
     filtered_df = df[df['product_category'] == selected_category]
     sales_trend_category = filtered_df.groupby('sale_date')['total_value'].sum().reset_index()
     category_trend_chart = alt.Chart(sales_trend_category).mark_line().encode(
-        x='sale_date:T',
-        y='total_value:Q'
+        x=alt.X('sale_date:T', sort='x', title='Sale Date'),
+        y=alt.Y('total_value:Q', title='Total Value')
     ).properties(width=700, height=300)
     st.altair_chart(category_trend_chart)
 

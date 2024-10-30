@@ -8,19 +8,23 @@ import numpy as np
 # Initialize Faker and set the number of rows
 fake = Faker()
 
-
 # Lists of random values for specific columns
-product_categories = ['Appliances', 'Furniture', 'Technology', 'Clothing', 'Accessories']
-products = ['Coffee Maker', 'Sofa', 'Smartphone', 'Jeans', 'Watch']
+product_categories = ['Fresh Produce', 'Dairy Products', 'Beverages', 'Snacks', 'Household Essentials']
+products = ['Apples', 'Bananas', 'Carrots', 'Spinach', 'Milk', 'Cheese', 'Yogurt', 'Butter',
+            'Orange Juice', 'Coffee', 'Mineral Water', 'Soda', 'Potato Chips', 'Chocolate Bar',
+            'Nuts', 'Crackers', 'Dish Soap', 'Paper Towels', 'Laundry Detergent', 'Trash Bags']
 sales_channels = ['Online Store', 'Marketplace', 'Physical Store']
 payment_methods = ['Credit Card', 'Pix', 'Invoice', 'Bank Transfer']
 payment_statuses = ['Paid', 'Pending', 'Canceled']
 delivery_statuses = ['Delivered', 'In Transit', 'Canceled']
 sales_regions = ['New York', 'California', 'Texas', 'Florida', 'Illinois']
+sales_reps = [fake.name() for _ in range(30)] 
 
-# Function to generate a single random sales record
-def generate_random_record():
-    sale_date = fake.date_between(start_date='-1y', end_date='today')
+# Start date for the sales data
+current_date = datetime(2024, 1, 1)  # Set an initial date
+
+# Function to generate a single random sales record for a specific date
+def generate_random_record(sale_date):
     sale_id = fake.uuid4()
     product_id = f"PRD{random.randint(10000, 99999)}"
     product_name = random.choice(products)
@@ -39,7 +43,7 @@ def generate_random_record():
     customer_name = fake.name()
     sales_channel = random.choice(sales_channels)
     sales_region = random.choice(sales_regions)
-    sales_rep = fake.name()
+    sales_rep = random.choice(sales_reps)
     customer_rating = random.choice(['1 star', '2 stars', '3 stars', '4 stars', '5 stars'])
     shipping_cost = round(random.uniform(5, 50), 2)
     delivery_status = random.choice(delivery_statuses)
@@ -73,22 +77,27 @@ def generate_random_record():
     }
 
 def create_sales_csv():
-
+    global current_date  # Access the global date variable
     num_rows = np.random.randint(50, 100)
+    
     # Create 'data' directory if it doesn't exist
     os.makedirs('data', exist_ok=True)
     
-    # Generate data and save it to a DataFrame
-    sales_data = [generate_random_record() for _ in range(num_rows)]
+    # Generate data for the specific date and save it to a DataFrame
+    sales_data = [generate_random_record(current_date) for _ in range(num_rows)]
     df_sales = pd.DataFrame(sales_data)
     
-    # Generate a unique filename with a timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_path = f"data/sales_data_{timestamp}.csv"
+    # Generate a unique filename with the current date
+    date_str = current_date.strftime("%Y%m%d")
+    csv_path = f"data/sales_data_{date_str}.csv"
     
     # Save DataFrame to CSV
     df_sales.to_csv(csv_path, index=False, encoding='utf-8')
     print(f"File '{csv_path}' created successfully with {num_rows} rows.")
     
+    # Move to the next day for the next run
+    current_date += timedelta(days=1)
+    
     return csv_path
+
 

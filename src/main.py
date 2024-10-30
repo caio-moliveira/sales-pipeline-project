@@ -41,7 +41,7 @@ def run_etl_process():
     # Send a Kafka message to indicate the data has been loaded into PostgreSQL
     producer.send_message("postgres-db", {"UPLOADED": "Data uploaded to Postgres", "file": output_path}, key="upload")
 
-# Scheduled task runner
+
 if __name__ == "__main__":
     last_csv_generation = time.time()
     last_s3_check = time.time()
@@ -51,25 +51,34 @@ if __name__ == "__main__":
 
         # Generate a new CSV every 30 seconds
         if current_time - last_csv_generation >= 30:
-            print("Generating new CSV file...")
-            create_sales_csv()
-            last_csv_generation = current_time
-            
-            # Send a Kafka message to the "S3-bucket" topic after generating a new CSV
-            producer.send_message("S3-bucket", {"CSV_GENERATED": "New CSV generated and ready for upload"}, key='csv')
+            try:
+                print("Generating new CSV file...")
+                create_sales_csv()
+                last_csv_generation = current_time
+                
+                # Send a Kafka message after generating a new CSV
+                producer.send_message("S3-bucket", {"CSV_GENERATED": "New CSV generated and ready for upload"}, key='csv')
+            except Exception as e:
+                print(f"Error generating CSV: {e}")
 
-        # Check and upload CSV files to S3 every 15 seconds
+        # Check and upload CSV files to S3 every 35 seconds
         if current_time - last_s3_check >= 35:
-            print("Checking for new files to upload to S3...")
-            check_and_upload_csv_files()
-            last_s3_check = current_time
-            
-            # Send a Kafka message to the "S3-bucket" topic after uploading a file to S3
-            producer.send_message("S3-bucket", {"UPLOADED": "File uploaded to S3"}, key='upload')
+            try:
+                print("Checking for new files to upload to S3...")
+                check_and_upload_csv_files()
+                last_s3_check = current_time
+                
+                # Send a Kafka message after uploading a file to S3
+                producer.send_message("S3-bucket", {"UPLOADED": "File uploaded to S3"}, key='upload')
+            except Exception as e:
+                print(f"Error uploading to S3: {e}")
 
         # Run ETL process to check for new data in S3 and load it to Postgres
-        print("Running ETL process to check for new data in S3...")
-        run_etl_process()
+        try:
+            print("Running ETL process to check for new data in S3...")
+            run_etl_process()
+        except Exception as e:
+            print(f"Error in ETL process: {e}")
 
         # Wait before the next iteration
         time.sleep(5)

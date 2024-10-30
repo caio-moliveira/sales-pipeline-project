@@ -46,6 +46,9 @@ The data is then visualized in a Streamlit-powered web application that accesses
 
 This project follows a modular ETL pipeline and visualization architecture. Each component is responsible for a specific function:
 
+![architecture](![image](https://github.com/user-attachments/assets/2e2d9a63-51da-42b4-b245-65fdf8cd7941)
+
+
 1. **Data Generation**: `csv_generator.py` creates a sales data CSV with simulated daily sales.
 2. **S3 Storage and Monitoring**: Files are stored in an S3 bucket and monitored by a Kafka topic that triggers the ETL process upon file arrival.
 3. **ETL Pipeline**:

@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-conf = {
+
+# Configuration for Confluent Cloud
+confluent_conf = {
     'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
     'group.id': 'etl-group',
     'auto.offset.reset': 'earliest',
@@ -16,6 +18,13 @@ conf = {
     'sasl.password': os.getenv('SASL_PASSWORD')
 }
 
+# Configuration for Local Kafka Broker
+local_conf = {
+    'bootstrap.servers': 'sales:9092',
+    'group.id': 'etl-group',
+    'auto.offset.reset': 'earliest'
+}
+
 # Configuring logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("KafkaProducer")
@@ -23,7 +32,7 @@ logger = logging.getLogger("KafkaProducer")
 class KafkaProducer:
     def __init__(self):
         # Configure the producer with SASL_SSL for Confluent Cloud
-        self.producer = ConfluentProducer(conf)
+        self.producer = ConfluentProducer(local_conf) # or use confluent_conf 
 
     def send_message(self, topic: str, message: dict, key: str = None):
         """Send message to 'S3-bucket' topic when a CSV file reaches the S3 bucket."""

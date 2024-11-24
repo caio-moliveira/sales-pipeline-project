@@ -5,10 +5,10 @@ services:
     container_name: zookeeper
     restart: unless-stopped
     ports:
-      - "32181:32181"
+      - "2181:2181"
     environment:
       ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_CLIENT_PORT: 32181
+      ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - kafka
@@ -24,26 +24,44 @@ services:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://sales:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
     networks:
       - kafka
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - sales
+    command: >
+      sh -c "
+        kafka-topics --create --bootstrap-server sales:9092 --topic postgres-db --partitions 1 --replication-factor 1 &&
+        kafka-topics --create --bootstrap-server sales:9092 --topic file-generated --partitions 1 --replication-factor 1 &&
+        kafka-topics --create --bootstrap-server sales:9092 --topic S3-bucket --partitions 1 --replication-factor 1
+      "
+    networks:
+      - kafka
+
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
       - "8087:8080"
-    depends_on:
-      - sales
     environment:
-      KAFKA_CLUSTERS_0_NAME: sales
+      # Local Kafka broker configuration
+      KAFKA_CLUSTERS_0_NAME: sales-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: sales:9092
-      DYNAMIC_CONFIG_ENABLED: "true"
+      KAFKA_CLUSTERS_0_CONSUMER_GROUP_ID: etl-group
+    depends_on:
+      - sales  # Local Kafka broker dependency
     networks:
       - kafka
+
 
   postgres:
     image: postgres:latest

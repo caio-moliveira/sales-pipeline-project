@@ -50,19 +50,19 @@ if __name__ == "__main__":
         current_time = time.time()
 
         # Generate a new CSV every 30 seconds
-        if current_time - last_csv_generation >= 30:
+        if current_time - last_csv_generation >= 60:
             try:
                 print("Generating new CSV file...")
                 create_sales_csv()
                 last_csv_generation = current_time
                 
                 # Send a Kafka message after generating a new CSV
-                producer.send_message("S3-bucket", {"CSV_GENERATED": "New CSV generated and ready for upload"}, key='csv')
+                producer.send_message("file-generated", {"CSV_GENERATED": "New CSV generated and ready for upload"}, key='csv')
             except Exception as e:
                 print(f"Error generating CSV: {e}")
 
         # Check and upload CSV files to S3 every 35 seconds
-        if current_time - last_s3_check >= 35:
+        if current_time - last_s3_check >= 60:
             try:
                 print("Checking for new files to upload to S3...")
                 check_and_upload_csv_files()

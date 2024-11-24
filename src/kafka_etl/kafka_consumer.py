@@ -7,15 +7,22 @@ from confluent_kafka import Consumer as ConfluentConsumer, KafkaException
 # Load environment variables for Kafka credentials
 load_dotenv()
 
-# Kafka consumer configuration
-conf = {
+# Configuration for Confluent Cloud
+confluent_conf = {
     'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'group.id': 'etl-consumer-group',
+    'group.id': 'etl-group',
     'auto.offset.reset': 'earliest',
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
     'sasl.username': os.getenv('SASL_USERNAME'),
     'sasl.password': os.getenv('SASL_PASSWORD')
+}
+
+# Configuration for Local Kafka Broker
+local_conf = {
+    'bootstrap.servers': 'sales:9092',
+    'group.id': 'etl-group',
+    'auto.offset.reset': 'earliest'
 }
 
 # Configuring logging
@@ -25,7 +32,7 @@ logger = logging.getLogger("KafkaConsumer")
 class KafkaConsumer:
     def __init__(self, topics: list):
         # Initialize the Confluent consumer with the configuration and subscribe to topics
-        self.consumer = ConfluentConsumer(conf)
+        self.consumer = ConfluentConsumer(local_conf)
         self.consumer.subscribe(topics)
 
     def consume_messages(self):

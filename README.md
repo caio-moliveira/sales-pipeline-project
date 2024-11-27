@@ -84,6 +84,50 @@ This project follows a modular ETL pipeline and visualization architecture. Each
   docker-compose up --build
   ```
 
+4. **Environment Variables**
+
+This project requires specific environment variables to be set for proper functioning. Below is a description of each variable and its purpose. Make sure to include them in a `.env` file at the root of the project.
+
+### AWS Configuration
+- **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication.
+- **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key.
+- **`AWS_REGION`**: The AWS region where your services are hosted (e.g., `us-east-1`).
+- **`BUCKET_NAME`**: The name of your AWS S3 bucket.
+
+### PostgreSQL Database Configuration
+- **`POSTGRES_USER`**: The username for your PostgreSQL database.
+- **`POSTGRES_PASSWORD`**: The password for your PostgreSQL database.
+- **`POSTGRES_HOST`**: The host address of your PostgreSQL database.
+- **`POSTGRES_DB`**: The name of your PostgreSQL database.
+
+### Kafka Configuration
+- **`BOOTSTRAP_SERVERS`**: The Kafka broker(s) to connect to (e.g., `broker1:9092,broker2:9092`).
+- **`SASL_USERNAME`**: Your Kafka username (if SASL authentication is enabled).
+- **`SASL_PASSWORD`**: Your Kafka password (if SASL authentication is enabled).
+- **`CLIENT_ID`**: The unique identifier for the Kafka client.
+
+#### Setting Up
+1. Create a `.env` file in the root of the project.
+2. Copy the example below and replace placeholder values with your actual credentials.
+3. Ensure the `.env` file is excluded from version control using `.gitignore` to keep sensitive information private.
+
+### Example `.env` File
+```env
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=your_aws_region
+BUCKET_NAME=your_bucket_name
+
+POSTGRES_USER=your_postgres_username
+POSTGRES_PASSWORD=your_postgres_password
+POSTGRES_HOST=your_postgres_host
+POSTGRES_DB=your_postgres_database
+
+BOOTSTRAP_SERVERS=your_kafka_bootstrap_servers
+SASL_USERNAME=your_kafka_username
+SASL_PASSWORD=your_kafka_password
+CLIENT_ID=your_kafka_client_id
+```
 
  ## Data Flow
 
@@ -106,7 +150,4 @@ The dashboard displays the following KPIs:
 - **Top-selling Products**: Highest volume products for the day.
 - **Sales by Category**: Breakdown of sales by product category.
 - **Sales Trend**: A real-time chart tracking sales over time.
-
-
-
 

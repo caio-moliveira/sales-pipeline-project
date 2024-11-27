@@ -102,8 +102,8 @@ This project requires specific environment variables to be set for proper functi
 
 ### Kafka Configuration
 - **`BOOTSTRAP_SERVERS`**: The Kafka broker(s) to connect to (e.g., `broker1:9092,broker2:9092`).
-- **`SASL_USERNAME`**: Your Kafka username (if SASL authentication is enabled).
-- **`SASL_PASSWORD`**: Your Kafka password (if SASL authentication is enabled).
+- **`SASL_USERNAME`**: Your Kafka username.
+- **`SASL_PASSWORD`**: Your Kafka password.
 - **`CLIENT_ID`**: The unique identifier for the Kafka client.
 
 #### Setting Up

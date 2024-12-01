@@ -72,12 +72,9 @@ def load_data_to_postgres(file_path, table_name='sales_data'):
 
         # Insert new data into the PostgreSQL table, handling duplicates with the unique constraint
         with engine.connect() as connection:
-            try:
                 # Insert directly, allowing PostgreSQL to enforce the unique constraint
                 df.to_sql(table_name, connection, if_exists='append', index=False)
                 print(f"New data from {file_path} loaded successfully into the '{table_name}' table.")
-            except Exception as e:
-                print(f"An error occurred while inserting data to PostgreSQL: {e}")
     except Exception as e:
         print(f"An error occurred while loading data to PostgreSQL: {e}")
 

@@ -1,63 +1,111 @@
 import json
 import logging
-import os
-from dotenv import load_dotenv
 from confluent_kafka import Consumer as ConfluentConsumer, KafkaException
+from backend.creating_files.loader_S3.loader import check_and_upload_csv_files
+from backend.etl.extract import download_csv_files_from_s3
+from backend.etl.transform import validate_and_clean_data
+from backend.etl.load import load_data_to_postgres
+import os
 
-# Load environment variables for Kafka credentials
-load_dotenv()
-
-# Configuration for Confluent Cloud
-confluent_conf = {
-    'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'group.id': 'etl-group',
-    'auto.offset.reset': 'earliest',
-    'security.protocol': 'SASL_SSL',
-    'sasl.mechanisms': 'PLAIN',
-    'sasl.username': os.getenv('SASL_USERNAME'),
-    'sasl.password': os.getenv('SASL_PASSWORD')
-}
-
-# Configuration for Local Kafka Broker
+# Kafka consumer configuration
 local_conf = {
     'bootstrap.servers': 'sales:9092',
     'group.id': 'etl-group',
-    'auto.offset.reset': 'earliest'
+    'auto.offset.reset': 'earliest',
 }
 
-# Configuring logging
+# Logging setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("KafkaConsumer")
 
 class KafkaConsumer:
     def __init__(self, topics: list):
-        # Initialize the Confluent consumer with the configuration and subscribe to topics
         self.consumer = ConfluentConsumer(local_conf)
         self.consumer.subscribe(topics)
 
     def consume_messages(self):
-        """Continuously listen to messages from subscribed topics."""
+        """Consume messages and trigger pipeline steps."""
         try:
             while True:
-                msg = self.consumer.poll(1.0)  # Poll for new messages
+                msg = self.consumer.poll(1.0)
                 if msg is None:
                     continue
                 if msg.error():
-                    if msg.error().code() == KafkaException._PARTITION_EOF:
-                        logger.info("End of partition reached %s %s", msg.topic(), msg.partition())
-                    else:
-                        logger.error("Consumer error: %s", msg.error())
+                    logger.error("Consumer error: %s", msg.error())
                     continue
 
-                # Decode and log the message
+                # Decode message
                 message_value = json.loads(msg.value().decode('utf-8'))
                 logger.info("Received message from %s: %s", msg.topic(), message_value)
-        except KeyboardInterrupt:
-            pass
+
+                # Trigger appropriate step based on the topic
+                if msg.topic() == "file-generated":
+                    self.handle_file_generated(message_value)
+                elif msg.topic() == "S3-bucket":
+                    self.handle_s3_upload(message_value)
+                elif msg.topic() == "postgres-db":
+                    self.handle_postgres_upload(message_value)
+
+        except Exception as e:
+            logger.error(f"Error during message consumption: {e}")
         finally:
             self.close()
 
+    def handle_file_generated(self, message):
+        """Handle 'file-generated' topic."""
+        try:
+            logger.info("Uploading file to S3...")
+            check_and_upload_csv_files()
+
+            # Send Kafka message after S3 upload
+            from kafka_etl.kafka_producer import KafkaProducer
+            producer = KafkaProducer()
+            producer.send_message(
+                "S3-bucket",
+                {"UPLOADED": "File uploaded to S3"},
+                key="s3_upload"
+            )
+            producer.close()
+        except Exception as e:
+            logger.error(f"Error handling file-generated: {e}")
+
+    def handle_s3_upload(self, message):
+        """Handle 'S3-bucket' topic."""
+        try:
+            logger.info("Running ETL pipeline...")
+            # Step 1: Download CSV files from S3
+            new_dataframes = download_csv_files_from_s3()
+            if not new_dataframes:
+                logger.info("No new files to process.")
+                return
+
+            # Step 2: Validate and clean data
+            cleaned_data = validate_and_clean_data(new_dataframes)
+
+            # Save cleaned data locally for reference
+            output_path = os.path.join("data_consolidated", "last_csv_updated.csv")
+            cleaned_data.to_csv(output_path, index=False)
+            logger.info(f"Cleaned data saved to {output_path}.")
+
+            # Step 3: Load cleaned data into PostgreSQL
+            load_data_to_postgres(output_path)
+            logger.info("Data successfully loaded into PostgreSQL.")
+
+            # Send Kafka message after successful data load
+            from kafka_etl.kafka_producer import KafkaProducer
+            producer = KafkaProducer()
+            producer.send_message(
+                "postgres-db",
+                {"UPLOADED": "Data uploaded to Postgres"},
+                key="db_upload"
+            )
+            producer.close()
+        except Exception as e:
+            logger.error(f"Error in ETL pipeline: {e}")
+    def handle_postgres_upload(self, message):
+        """Handle 'postgres-db' topic."""
+        logger.info("Data successfully uploaded to Postgres. Pipeline completed.")
+
     def close(self):
-        """Close the Kafka consumer connection."""
+        """Close the consumer."""
         self.consumer.close()
-        

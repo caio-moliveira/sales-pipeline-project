@@ -21,7 +21,7 @@ sales_regions = ['New York', 'California', 'Texas', 'Florida', 'Illinois']
 sales_reps = [fake.name() for _ in range(30)] 
 
 # Start date for the sales data
-current_date = datetime(2024, 1, 1)  # Set an initial date
+current_date = datetime(2024, 1, 1) 
 
 # Function to generate a single random sales record for a specific date
 def generate_random_record(sale_date):

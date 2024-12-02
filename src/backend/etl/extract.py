@@ -37,14 +37,14 @@ class SalesRecord(BaseModel):
     product_category: str = Field(alias="Product Category")
     quantity_sold: int = Field(alias="Quantity Sold", ge=1)
     unit_price: float = Field(alias="Unit Price", ge=0)
-    discount: Optional[int] = Field(alias="Discount (%)", ge=0, le=100)  # Changed to int
+    discount: Optional[int] = Field(alias="Discount (%)", ge=0, le=100) 
     total_value: float = Field(alias="Total Value (with Discount)", ge=0)
     unit_cost: float = Field(alias="Unit Cost", ge=0)
     total_cost: float = Field(alias="Total Cost", ge=0)
     gross_profit: float = Field(alias="Gross Profit")
     payment_method: str = Field(alias="Payment Method")
     payment_status: str = Field(alias="Payment Status")
-    payment_date: Optional[date] = Field(alias="Payment Date")  # Changed to date
+    payment_date: Optional[date] = Field(alias="Payment Date")
     customer_id: str = Field(alias="Customer ID")
     customer_name: str = Field(alias="Customer Name")
     sales_channel: str = Field(alias="Sales Channel")

@@ -5,6 +5,7 @@ from backend.creating_files.loader_S3.loader import check_and_upload_csv_files
 from backend.etl.extract import download_csv_files_from_s3
 from backend.etl.transform import validate_and_clean_data
 from backend.etl.load import load_data_to_postgres
+from kafka_etl.kafka_producer import KafkaProducer
 import os
 
 # Kafka consumer configuration
@@ -54,11 +55,10 @@ class KafkaConsumer:
     def handle_file_generated(self, message):
         """Handle 'file-generated' topic."""
         try:
-            logger.info("Uploading file to S3...")
             check_and_upload_csv_files()
 
             # Send Kafka message after S3 upload
-            from kafka_etl.kafka_producer import KafkaProducer
+            
             producer = KafkaProducer()
             producer.send_message(
                 "S3-bucket",
@@ -85,14 +85,11 @@ class KafkaConsumer:
             # Save cleaned data locally for reference
             output_path = os.path.join("data_consolidated", "last_csv_updated.csv")
             cleaned_data.to_csv(output_path, index=False)
-            logger.info(f"Cleaned data saved to {output_path}.")
 
             # Step 3: Load cleaned data into PostgreSQL
             load_data_to_postgres(output_path)
-            logger.info("Data successfully loaded into PostgreSQL.")
 
             # Send Kafka message after successful data load
-            from kafka_etl.kafka_producer import KafkaProducer
             producer = KafkaProducer()
             producer.send_message(
                 "postgres-db",
@@ -104,7 +101,7 @@ class KafkaConsumer:
             logger.error(f"Error in ETL pipeline: {e}")
     def handle_postgres_upload(self, message):
         """Handle 'postgres-db' topic."""
-        logger.info("Data successfully uploaded to Postgres. Pipeline completed.")
+        logger.info("Pipeline completed! Dashboard has been updated!")
 
     def close(self):
         """Close the consumer."""

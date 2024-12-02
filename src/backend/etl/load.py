@@ -29,21 +29,21 @@ Session = sessionmaker(bind=engine)
 class SalesData(Base):
     __tablename__ = 'sales_data'
     
-    sale_date = Column(Date, nullable=False)  # Changed to Date
+    sale_date = Column(Date, nullable=False) 
     sale_id = Column(String, primary_key=True, nullable=False)
     product_id = Column(String, nullable=False)
     product_name = Column(String, nullable=False)
     product_category = Column(String, nullable=False)
     quantity_sold = Column(Integer, nullable=False)
     unit_price = Column(Float, nullable=False)
-    discount = Column(Integer, nullable=True)  # Changed to Integer
+    discount = Column(Integer, nullable=True) 
     total_value = Column(Float, nullable=False)
     unit_cost = Column(Float, nullable=False)
     total_cost = Column(Float, nullable=False)
     gross_profit = Column(Float, nullable=False)
     payment_method = Column(String, nullable=False)
     payment_status = Column(String, nullable=False)
-    payment_date = Column(Date, nullable=True)  # Changed to Date
+    payment_date = Column(Date, nullable=True)  
     customer_id = Column(String, nullable=False)
     customer_name = Column(String, nullable=False)
     sales_channel = Column(String, nullable=False)
@@ -52,7 +52,7 @@ class SalesData(Base):
     customer_rating = Column(String, nullable=True)
     shipping_cost = Column(Float, nullable=False)
     delivery_status = Column(String, nullable=False)
-    delivery_date = Column(Date, nullable=True)  # Changed to Date
+    delivery_date = Column(Date, nullable=True) 
 
     # Function to create the sales_data table if it doesn't exist
 def create_sales_data_table():
